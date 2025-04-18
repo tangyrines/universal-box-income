@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Box Income</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: auto 1fr;
+            gap: 20px;
+            height: 100vh;
+        }
+        .header {
+            grid-column: 1 / 4;
+            text-align: center;
+            background-color: #4a6fa5;
+            color: white;
+            padding: 10px;
+            border-radius: 10px;
+        }
+        .window {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+        }
+        .character {
+            grid-column: 1 / 2;
+        }
+        .main-box {
+            grid-column: 2 / 3;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .inventory {
+            grid-column: 3 / 4;
+        }
+        .ubi-button {
+            padding: 20px 40px;
+            font-size: 18px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+        .ubi-button:hover {
+            background-color: #45a049;
+            transform: scale(1.05);
+        }
+        .ubi-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #ddd;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            display: none;
+        }
+        .progress {
+            height: 100%;
+            background-color: #4CAF50;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+        .window h2 {
+            margin-top: 0;
+            color: #4a6fa5;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        .stat {
+            margin-bottom: 10px;
+        }
+        .stat-bar {
+            height: 15px;
+            background-color: #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .stat-fill {
+            height: 100%;
+            width: 100%;
+        }
+        .health-fill {
+            background-color: #e74c3c;
+        }
+        .hunger-fill {
+            background-color: #f39c12;
+        }
+        .thirst-fill {
+            background-color: #3498db;
+        }
+        .creativity-fill {
+            background-color: #9b59b6;
+        }
+        .plasticity-fill {
+            background-color: #1abc9c;
+        }
+        .inventory-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .log {
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            padding: 10px;
+            font-size: 14px;
+            background-color: #f9f9f9;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+        }
+        .upgrade {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border: 1px solid #eee;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        .upgrade:hover {
+            background-color: #f5f5f5;
+        }
+        .upgrade-button {
+            padding: 5px 10px;
+            background-color: #4a6fa5;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .upgrade-button:hover {
+            background-color: #3d5c8c;
+        }
+        .upgrade-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 10px;
+        }
+        .tab {
+            padding: 10px 15px;
+            background-color: #eee;
+            cursor: pointer;
+            border-radius: 5px 5px 0 0;
+            margin-right: 5px;
+        }
+        .tab.active {
+            background-color: #4a6fa5;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .animation-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            display: none;
+        }
+        .box-animation {
+            width: 200px;
+            height: 200px;
+            background-color: #f8d943;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            box-shadow: 0 0 50px gold;
+            position: relative;
+            animation: pulse 1s infinite alternate;
+        }
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            100% {
+                transform: scale(1.1);
+            }
+        }
+        .loot-item {
+            position: absolute;
+            font-size: 24px;
+            font-weight: bold;
+            opacity: 0;
+            animation: flyOut 1s forwards;
+        }
+        @keyframes flyOut {
+            0% {
+                opacity: 0;
+                transform: translate(0, 0) scale(0.5);
+            }
+            50% {
+                opacity: 1;
+                transform: translate(0, -50px) scale(1.2);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(0, -100px) scale(1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Universal Box Income</h1>
+        </div>
+        
+        <div class="window character">
+            <h2>Character</h2>
+            
+            <div class="stat">
+                <div class="stat-label">Health: <span id="health-value">100</span>/100</div>
+                <div class="stat-bar">
+                    <div class="stat-fill health-fill" id="health-bar"></div>
+                </div>
+            </div>
+            
+            <div class="stat">
+                <div class="stat-label">Hunger: <span id="hunger-value">100</span>/100</div>
+                <div class="stat-bar">
+                    <div class="stat-fill hunger-fill" id="hunger-bar"></div>
+                </div>
+            </div>
+            
+            <div class="stat">
+                <div class="stat-label">Thirst: <span id="thirst-value">100</span>/100</div>
+                <div class="stat-bar">
+                    <div class="stat-fill thirst-fill" id="thirst-bar"></div>
+                </div>
+            </div>
+            
+            <h3>Skills</h3>
+            
+            <div class="stat">
+                <div class="stat-label">Creativity: <span id="creativity-value">10</span>/100</div>
+                <div class="stat-bar">
+                    <div class="stat-fill creativity-fill" id="creativity-bar"></div>
+                </div>
+            </div>
+            
+            <div class="stat">
+                <div class="stat-label">Plasticity: <span id="plasticity-value">10</span>/100</div>
+                <div class="stat-bar">
+                    <div class="stat-fill plasticity-fill" id="plasticity-bar"></div>
+                </div>
+            </div>
+
+            <div class="log" id="game-log">
+                <div class="log-entry">Welcome to Universal Box Income!</div>
+            </div>
+        </div>
+        
+        <div class="window main-box">
+            <div class="tabs">
+                <div class="tab active" data-tab="box">Box</div>
+                <div class="tab" data-tab="upgrades">Upgrades</div>
+            </div>
+            
+            <div class="tab-content active" id="box-tab">
+                <button id="ubi-button" class="ubi-button">Claim UBI Box</button>
+                <div class="progress-bar" id="cooldown-bar">
+                    <div class="progress" id="cooldown-progress"></div>
+                </div>
+                <div id="cooldown-timer"></div>
+                <p>Click the button to receive your Universal Box Income. Each box contains necessary supplies and possibly some money.</p>
+            </div>
+            
+            <div class="tab-content" id="upgrades-tab">
+                <div class="upgrade" id="auto-claim-upgrade">
+                    <div>
+                        <h3>Auto Claim</h3>
+                        <p>Automatically claims a box every cooldown period.</p>
+                        <p>Cost: $100</p>
+                    </div>
+                    <button class="upgrade-button" id="buy-auto-claim" disabled>Buy</button>
+                </div>
+                
+                <div class="upgrade" id="better-boxes-upgrade">
+                    <div>
+                        <h3>Better Boxes</h3>
+                        <p>Increases the quality and quantity of items in boxes.</p>
+                        <p>Cost: $250</p>
+                    </div>
+                    <button class="upgrade-button" id="buy-better-boxes" disabled>Buy</button>
+                </div>
+                
+                <div class="upgrade" id="faster-cooldown-upgrade">
+                    <div>
+                        <h3>Faster Cooldown</h3>
+                        <p>Reduces the cooldown time between box claims.</p>
+                        <p>Cost: $150</p>
+                    </div>
+                    <button class="upgrade-button" id="buy-faster-cooldown" disabled>Buy</button>
+                </div>
+                
+                <div class="upgrade" id="money-chance-upgrade">
+                    <div>
+                        <h3>Money Chance</h3>
+                        <p>Increases the chance of finding money in boxes.</p>
+                        <p>Cost: $200</p>
+                    </div>
+                    <button class="upgrade-button" id="buy-money-chance" disabled>Buy</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="window inventory">
+            <h2>Inventory</h2>
+            <div id="inventory-list">
+                <div class="inventory-item">
+                    <span>Food</span>
+                    <span id="food-amount">10</span>
+                </div>
+                <div class="inventory-item">
+                    <span>Water</span>
+                    <span id="water-amount">10</span>
+                </div>
+                <div class="inventory-item">
+                    <span>Money</span>
+                    <span id="money-amount">$0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="animation-overlay" id="animation-overlay">
+        <div class="box-animation" id="box-animation">
+            <span>OPENING...</span>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        const gameState = {
+            health: 100,
+            hunger: 100,
+            thirst: 100,
+            creativity: 10,
+            plasticity: 10,
+            inventory: {
+                food: 10,
+                water: 10,
+                money: 0
+            },
+            cooldown: 15, // seconds
+            onCooldown: false,
+            cooldownTimer: null,
+            cooldownRemaining: 0,
+            upgrades: {
+                autoClaim: false,
+                autoClaimInterval: null,
+                betterBoxes: 0,
+                fasterCooldown: 0,
+                moneyChance: 0
+            },
+            baseMoneyChance: 0.1, // 10% chance for money
+            baseItemQuantity: { min: 1, max: 3 },
+            baseCooldown: 15 // seconds
+        };
+
+        // DOM Elements
+        const ubiButton = document.getElementById('ubi-button');
+        const cooldownBar = document.getElementById('cooldown-bar');
+        const cooldownProgress = document.getElementById('cooldown-progress');
+        const cooldownTimer = document.getElementById('cooldown-timer');
+        const gameLog = document.getElementById('game-log');
+        const healthValue = document.getElementById('health-value');
+        const healthBar = document.getElementById('health-bar');
+        const hungerValue = document.getElementById('hunger-value');
+        const hungerBar = document.getElementById('hunger-bar');
+        const thirstValue = document.getElementById('thirst-value');
+        const thirstBar = document.getElementById('thirst-bar');
+        const creativityValue = document.getElementById('creativity-value');
+        const creativityBar = document.getElementById('creativity-bar');
+        const plasticityValue = document.getElementById('plasticity-value');
+        const plasticityBar = document.getElementById('plasticity-bar');
+        const foodAmount = document.getElementById('food-amount');
+        const waterAmount = document.getElementById('water-amount');
+        const moneyAmount = document.getElementById('money-amount');
+        const buyAutoClaimBtn = document.getElementById('buy-auto-claim');
+        const buyBetterBoxesBtn = document.getElementById('buy-better-boxes');
+        const buyFasterCooldownBtn = document.getElementById('buy-faster-cooldown');
+        const buyMoneyChanceBtn = document.getElementById('buy-money-chance');
+        const animationOverlay = document.getElementById('animation-overlay');
+        const boxAnimation = document.getElementById('box-animation');
+
+        // Tab switching
+        const tabs = document.querySelectorAll('.tab');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs and content
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+                
+                // Add active class to clicked tab and corresponding content
+                tab.classList.add('active');
+                document.getElementById(`${tab.dataset.tab}-tab`).classList.add('active');
+            });
+        });
+
+        // Initialize
+        function init() {
+            updateStats();
+            updateInventory();
+            checkUpgradeAvailability();
+            startConsumptionInterval();
+        }
+
+        // Update stats display
+        function updateStats() {
+            healthValue.textContent = Math.floor(gameState.health);
+            healthBar.style.width = `${gameState.health}%`;
+            
+            hungerValue.textContent = Math.floor(gameState.hunger);
+            hungerBar.style.width = `${gameState.hunger}%`;
+            
+            thirstValue.textContent = Math.floor(gameState.thirst);
+            thirstBar.style.width = `${gameState.thirst}%`;
+            
+            creativityValue.textContent = Math.floor(gameState.creativity);
+            creativityBar.style.width = `${gameState.creativity}%`;
+            
+            plasticityValue.textContent = Math.floor(gameState.plasticity);
+            plasticityBar.style.width = `${gameState.plasticity}%`;
+        }
+
+        // Update inventory display
+        function updateInventory() {
+            foodAmount.textContent = gameState.inventory.food;
+            waterAmount.textContent = gameState.inventory.water;
+            moneyAmount.textContent = `$${gameState.inventory.money}`;
+        }
+
+        // Log message
+        function logMessage(message) {
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.textContent = message;
+            gameLog.appendChild(logEntry);
+            gameLog.scrollTop = gameLog.scrollHeight;
+            
+            // Trim log if it gets too long
+            if (gameLog.children.length > 50) {
+                gameLog.removeChild(gameLog.children[0]);
+            }
+        }
+
+        // Start cooldown timer
+        function startCooldown() {
+            if (gameState.onCooldown) return;
+            
+            gameState.onCooldown = true;
+            ubiButton.disabled = true;
+            cooldownBar.style.display = 'block';
+            
+            // Calculate cooldown time with upgrades
+            const actualCooldown = Math.max(1, gameState.baseCooldown - (gameState.upgrades.fasterCooldown * 2));
+            gameState.cooldownRemaining = actualCooldown;
+            
+            clearInterval(gameState.cooldownTimer);
+            gameState.cooldownTimer = setInterval(() => {
+                gameState.cooldownRemaining -= 0.1;
+                const percentage = 100 - ((gameState.cooldownRemaining / actualCooldown) * 100);
+                cooldownProgress.style.width = `${percentage}%`;
+                cooldownTimer.textContent = `${gameState.cooldownRemaining.toFixed(1)}s`;
+                
+                if (gameState.cooldownRemaining <= 0) {
+                    clearInterval(gameState.cooldownTimer);
+                    endCooldown();
+                }
+            }, 100);
+        }
+
+        // End cooldown timer
+        function endCooldown() {
+            gameState.onCooldown = false;
+            ubiButton.disabled = false;
+            cooldownBar.style.display = 'none';
+            cooldownTimer.textContent = '';
+            
+            if (gameState.upgrades.autoClaim) {
+                claimBox();
+            }
+        }
+
+        // Claim UBI Box
+        function claimBox() {
+            if (gameState.onCooldown) return;
+            
+            startCooldown();
+            // Show box opening animation
+            animationOverlay.style.display = 'flex';
+            
+            setTimeout(() => {
+                // Generate loot
+                const loot = generateLoot();
+                
+                // Display flying loot items
+                loot.forEach((item, index) => {
+                    const lootElement = document.createElement('div');
+                    lootElement.className = 'loot-item';
+                    
+                    if (item.type === 'food') {
+                        lootElement.textContent = `+${item.amount} 🍗`;
+                        gameState.inventory.food += item.amount;
+                        logMessage(`You received ${item.amount} food from the box.`);
+                    } else if (item.type === 'water') {
+                        lootElement.textContent = `+${item.amount} 💧`;
+                        gameState.inventory.water += item.amount;
+                        logMessage(`You received ${item.amount} water from the box.`);
+                    } else if (item.type === 'money') {
+                        lootElement.textContent = `+$${item.amount} 💰`;
+                        gameState.inventory.money += item.amount;
+                        logMessage(`You received $${item.amount} from the box!`);
+                    }
+                    
+                    // Position randomly within the box
+                    lootElement.style.left = `${Math.random() * 150 + 25}px`;
+                    lootElement.style.top = `${Math.random() * 150 + 25}px`;
+                    
+                    // Add to animation
+                    boxAnimation.appendChild(lootElement);
+                    
+                    // Increase stats slightly
+                    gameState.creativity += 0.2;
+                    gameState.plasticity += 0.1;
+                    
+                    // Remove element after animation
+                    setTimeout(() => {
+                        boxAnimation.removeChild(lootElement);
+                    }, 1000);
+                });
+                
+                updateInventory();
+                updateStats();
+                checkUpgradeAvailability();
+                
+                // Hide animation after all items displayed
+                setTimeout(() => {
+                    animationOverlay.style.display = 'none';
+                }, 1500);
+            }, 500);
+        }
+
+        // Generate loot based on upgrades
+        function generateLoot() {
+            const loot = [];
+            const qualityMultiplier = 1 + (gameState.upgrades.betterBoxes * 0.5);
+            const moneyChance = gameState.baseMoneyChance + (gameState.upgrades.moneyChance * 0.05);
+            
+            // Always include food and water
+            const minAmount = Math.ceil(gameState.baseItemQuantity.min * qualityMultiplier);
+            const maxAmount = Math.ceil(gameState.baseItemQuantity.max * qualityMultiplier);
+            
+            const foodAmount = Math.floor(Math.random() * (maxAmount - minAmount + 1)) + minAmount;
+            const waterAmount = Math.floor(Math.random() * (maxAmount - minAmount + 1)) + minAmount;
+            
+            loot.push({ type: 'food', amount: foodAmount });
+            loot.push({ type: 'water', amount: waterAmount });
+            
+            // Chance for money
+            if (Math.random() < moneyChance) {
+                const moneyAmount = Math.floor((Math.random() * 20 + 10) * qualityMultiplier);
+                loot.push({ type: 'money', amount: moneyAmount });
+            }
+            
+            return loot;
+        }
+
+        // Consumption interval (every minute)
+        function startConsumptionInterval() {
+            setInterval(() => {
+                consumeResources();
+            }, 60000); // 60 seconds
+        }
+
+        // Consume food and water
+        function consumeResources() {
+            // Decrease hunger and thirst
+            gameState.hunger -= 10;
+            gameState.thirst -= 10;
+            
+            logMessage("You're feeling hungry and thirsty...");
+            
+            // Try to consume food and water
+            if (gameState.inventory.food > 0) {
+                gameState.inventory.food--;
+                gameState.hunger = Math.min(100, gameState.hunger + 30);
+                logMessage("You ate some food. (+30 Hunger)");
+            } else {
+                logMessage("You have no food! Your health will deteriorate.");
+            }
+            
+            if (gameState.inventory.water > 0) {
+                gameState.inventory.water--;
+                gameState.thirst = Math.min(100, gameState.thirst + 30);
+                logMessage("You drank some water. (+30 Thirst)");
+            } else {
+                logMessage("You have no water! Your health will deteriorate.");
+            }
+            
+            // Update health based on hunger and thirst
+            if (gameState.hunger <= 0 || gameState.thirst <= 0) {
+                gameState.health -= 5;
+                logMessage("You're suffering from malnutrition! (-5 Health)");
+                
+                if (gameState.health <= 0) {
+                    gameOver();
+                }
+            }
+            
+            // Normalize stats
+            gameState.hunger = Math.max(0, Math.min(100, gameState.hunger));
+            gameState.thirst = Math.max(0, Math.min(100, gameState.thirst));
+            gameState.health = Math.max(0, Math.min(100, gameState.health));
+            
+            updateStats();
+            updateInventory();
+        }
+
+        // Game over
+        function gameOver() {
+            logMessage("GAME OVER: You died from malnutrition!");
+            alert("Game Over! You died from malnutrition. Refresh the page to start again.");
+        }
+
+        // Check if upgrades are available
+        function checkUpgradeAvailability() {
+            const money = gameState.inventory.money;
+            
+            buyAutoClaimBtn.disabled = money < 100 || gameState.upgrades.autoClaim;
+            buyBetterBoxesBtn.disabled = money < 250 || gameState.upgrades.betterBoxes >= 5;
+            buyFasterCooldownBtn.disabled = money < 150 || gameState.upgrades.fasterCooldown >= 6;
+            buyMoneyChanceBtn.disabled = money < 200 || gameState.upgrades.moneyChance >= 5;
+        }
+
+        // Buy auto claim upgrade
+        buyAutoClaimBtn.addEventListener('click', () => {
+            if (gameState.inventory.money >= 100 && !gameState.upgrades.autoClaim) {
+                gameState.inventory.money -= 100;
+                gameState.upgrades.autoClaim = true;
+                logMessage("Upgrade purchased: Auto Claim");
+                updateInventory();
+                checkUpgradeAvailability();
+                
+                // If not on cooldown, claim immediately
+                if (!gameState.onCooldown) {
+                    claimBox();
+                }
+            }
+        });
+
+        // Buy better boxes upgrade
+        buyBetterBoxesBtn.addEventListener('click', () => {
+            if (gameState.inventory.money >= 250 && gameState.upgrades.betterBoxes < 5) {
+                gameState.inventory.money -= 250;
+                gameState.upgrades.betterBoxes++;
+                logMessage(`Upgrade purchased: Better Boxes (Level ${gameState.upgrades.betterBoxes})`);
+                updateInventory();
+                checkUpgradeAvailability();
+            }
+        });
+
+        // Buy faster cooldown upgrade
+        buyFasterCooldownBtn.addEventListener('click', () => {
+            if (gameState.inventory.money >= 150 && gameState.upgrades.fasterCooldown < 6) {
+                gameState.inventory.money -= 150;
+                gameState.upgrades.fasterCooldown++;
+                logMessage(`Upgrade purchased: Faster Cooldown (Level ${gameState.upgrades.fasterCooldown})`);
+                updateInventory();
+                checkUpgradeAvailability();
+            }
+        });
+
+        // Buy money chance upgrade
+        buyMoneyChanceBtn.addEventListener('click', () => {
+            if (gameState.inventory.money >= 200 && gameState.upgrades.moneyChance < 5) {
+                gameState.inventory.money -= 200;
+                gameState.upgrades.moneyChance++;
+                logMessage(`Upgrade purchased: Money Chance (Level ${gameState.upgrades.moneyChance})`);
+                updateInventory();
+                checkUpgradeAvailability();
+            }
+        });
+
+        // Button click handler
+        ubiButton.addEventListener('click', claimBox);
+
+        // Initialize the game
+        init();
+    </script>
+</body>
+</html>
